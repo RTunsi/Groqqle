@@ -6,7 +6,7 @@ import requests
 import streamlit as st
 import tldextract
 import traceback
-
+from distutils.util import strtobool
 from agents.Web_Agent import Web_Agent
 from agents.News_Agent import News_Agent
 from dotenv import load_dotenv
@@ -17,7 +17,8 @@ from urllib.parse import quote_plus, unquote_plus, urlparse
 load_dotenv()
 
 # Set up logging only if DEBUG is True in .env
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+# DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = bool(strtobool(os.getenv('DEBUG', 'False')))
 
 if DEBUG:
     logging.basicConfig(
@@ -32,6 +33,7 @@ else:
     logging.getLogger().addHandler(logging.NullHandler())
 
 def log_debug(message):
+    # print("DEBUG: ", DEBUG) 
     if DEBUG:
         logging.debug(sanitize_message(message))
 
@@ -276,7 +278,9 @@ def main(api_key_arg: str = None, num_results: int = 10, max_tokens: int = 4096,
         st.session_state.search_type = "Web"
     if 'api_key_source' not in st.session_state:
         st.session_state.api_key_source = 'none'
-
+    if 'humanize' not in st.session_state:
+        st.session_state.humanize = False
+    
     api_key = get_groq_api_key(api_key_arg)
 
     # Update sidebar (which now includes API key input)
@@ -563,7 +567,9 @@ def display_results(results, json_format=False, api_key=None):
 
 def create_api_app(api_key_arg: str = None, default_num_results: int = 10, default_max_tokens: int = 4096, default_summary_length: int = 300):
     app = Flask(__name__)
-
+    app.config.from_mapping(
+        DEBUG=os.getenv('FLASK_ENV') == 'development'
+    )
     @app.route('/search', methods=['POST'])
     def api_search():
         # Check for API key in Authorization header
@@ -587,11 +593,12 @@ def create_api_app(api_key_arg: str = None, default_num_results: int = 10, defau
         comprehension_grade = data.get('comprehension_grade', 8)
         search_type = data.get('search_type', 'web').lower()
         custom_prompt = data.get('custom_prompt')
+        humanize = data.get('humanize')
         
         if not query:
             return jsonify({"error": "No query provided"}), 400
 
-        log_debug(f"API search endpoint hit with query: {query}, num_results: {num_results}, summary_length: {summary_length}, model: {model}, max_tokens: {max_tokens}, temperature: {temperature}, comprehension_grade: {comprehension_grade}, search_type: {search_type}, custom_prompt: {custom_prompt}")
+        log_debug(f"API search endpoint hit with query: {query}, num_results: {num_results}, summary_length: {summary_length}, model: {model}, max_tokens: {max_tokens}, temperature: {temperature}, comprehension_grade: {comprehension_grade}, search_type: {search_type}, custom_prompt: {custom_prompt}, humanize: {humanize}")
         
         try:
             agent = Web_Agent(
@@ -602,7 +609,6 @@ def create_api_app(api_key_arg: str = None, default_num_results: int = 10, defau
                 temperature=temperature,
                 comprehension_grade=comprehension_grade,
                 summary_length=summary_length,
-                humanize=st.session_state.humanize 
             )
 
             url, _ = extract_url_and_prompt(query)

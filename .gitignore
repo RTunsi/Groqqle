@@ -33,3 +33,6 @@ temp/
 
 # Project specific
 images/
+
+# Debug logs
+debug_info.txt

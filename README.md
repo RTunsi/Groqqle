@@ -107,16 +107,33 @@ The Groqqle API allows you to programmatically access search results for both we
 
 3. Send a POST request to `http://127.0.0.1:5000/search` with the following JSON body:
    ```json
-   {
-     "query": "your search query",
-     "num_results": 20,
-     "max_tokens": 4096,
-     "search_type": "web"  // Use "web" for web search or "news" for news search
+   {  
+      "query": "Medical insurance coverage for type 2 diabetes",
+      "num_results": 5,
+      "max_tokens": 4096,
+      "summary_length": 200,
+      "model": "llama3-8b-8192",
+      "temperature": 0.0,
+      "comprehension_grade": 8,
+      "search_type": "web"              
    }
    ```
 
    Note: The API key is managed through environment variables, so you don't need to include it in the request.
 
+   Example:
+   ```
+   curl -X POST http://127.0.0.1:5000/search      -H "Content-Type: application/json"      -d '{
+      "query": "Medical insurance coverage for type 2 diabetes",
+      "num_results": 5,
+      "max_tokens": 4096,
+      "summary_length": 200,
+      "model": "llama3-8b-8192",
+      "temperature": 0.0,
+      "comprehension_grade": 8,
+      "search_type": "web"              
+   }'
+   ```
 4. The API will return a JSON response with your search results in the order: title, description, URL, source, and timestamp (for news results).
 
 Example using Python's `requests` library:
